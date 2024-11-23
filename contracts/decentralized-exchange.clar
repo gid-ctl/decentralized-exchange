@@ -40,3 +40,8 @@
         cumulative-price-y: uint
     }
 )
+
+(define-map liquidity-providers
+    {pool-id: {token-x: principal, token-y: principal}, provider: principal}
+    {shares: uint}
+)
