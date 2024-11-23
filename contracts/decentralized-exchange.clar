@@ -101,3 +101,25 @@
             (/ (* amount-y total-supply) reserve-y)
         ))
 )
+
+;; Public functions
+(define-public (create-pool (token-x principal) (token-y principal))
+    (begin
+        (asserts! (is-none (map-get? pools {token-x: token-x, token-y: token-y})) (err ERR-POOL-EXISTS))
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-NOT-AUTHORIZED))
+        
+        (map-set pools 
+            {token-x: token-x, token-y: token-y}
+            {
+                liquidity: u0,
+                reserve-x: u0,
+                reserve-y: u0,
+                total-shares: u0,
+                last-block-height: block-height,
+                cumulative-price-x: u0,
+                cumulative-price-y: u0
+            }
+        )
+        (ok true)
+    )
+)
