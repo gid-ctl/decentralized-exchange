@@ -87,3 +87,17 @@
         MIN-LIQUIDITY
         geometric-mean))
 )
+
+(define-private (calculate-liquidity-shares 
+    (amount-x uint) 
+    (amount-y uint) 
+    (total-supply uint) 
+    (reserve-x uint) 
+    (reserve-y uint))
+    (if (is-eq total-supply u0)
+        (calculate-initial-liquidity amount-x amount-y)
+        (get-smaller
+            (/ (* amount-x total-supply) reserve-x)
+            (/ (* amount-y total-supply) reserve-y)
+        ))
+)
