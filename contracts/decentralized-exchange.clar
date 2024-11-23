@@ -26,3 +26,17 @@
 (define-data-var last-price-update uint u0)
 (define-data-var governance-token (optional principal) none)
 (define-data-var emergency-shutdown bool false)
+
+;; Data maps
+(define-map pools 
+    {token-x: principal, token-y: principal}
+    {
+        liquidity: uint,
+        reserve-x: uint,
+        reserve-y: uint,
+        total-shares: uint,
+        last-block-height: uint,
+        cumulative-price-x: uint,
+        cumulative-price-y: uint
+    }
+)
