@@ -21,3 +21,8 @@
 (define-constant PROTOCOL-FEE u3) ;; 0.3%
 (define-constant MIN-LIQUIDITY u1000)
 (define-constant PRECISION u1000000) ;; 6 decimal places
+
+;; Data vars
+(define-data-var last-price-update uint u0)
+(define-data-var governance-token (optional principal) none)
+(define-data-var emergency-shutdown bool false)
