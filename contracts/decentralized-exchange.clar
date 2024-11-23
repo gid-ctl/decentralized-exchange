@@ -228,3 +228,11 @@
         (map-get? liquidity-providers 
             {pool-id: {token-x: token-x, token-y: token-y}, provider: provider}))
 )
+
+;; Governance functions
+(define-public (set-emergency-shutdown (shutdown bool))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-NOT-AUTHORIZED))
+        (var-set emergency-shutdown shutdown)
+        (ok true))
+)
