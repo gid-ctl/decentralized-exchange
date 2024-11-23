@@ -221,3 +221,10 @@
         reserve-y: (get reserve-y pool)
     }))
 )
+
+(define-read-only (get-provider-shares (token-x principal) (token-y principal) (provider principal))
+    (default-to 
+        {shares: u0}
+        (map-get? liquidity-providers 
+            {pool-id: {token-x: token-x, token-y: token-y}, provider: provider}))
+)
