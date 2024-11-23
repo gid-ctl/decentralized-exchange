@@ -14,3 +14,10 @@
 (define-constant ERR-INVALID-PAIR (err u105))
 (define-constant ERR-ZERO-AMOUNT (err u106))
 (define-constant ERR-DEADLINE-PASSED (err u107))
+
+;; Constants
+(define-constant CONTRACT-OWNER tx-sender)
+(define-constant FEE-DENOMINATOR u1000)
+(define-constant PROTOCOL-FEE u3) ;; 0.3%
+(define-constant MIN-LIQUIDITY u1000)
+(define-constant PRECISION u1000000) ;; 6 decimal places
