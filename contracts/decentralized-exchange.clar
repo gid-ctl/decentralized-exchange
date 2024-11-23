@@ -213,3 +213,11 @@
 (define-read-only (get-pool-details (token-x principal) (token-y principal))
     (map-get? pools {token-x: token-x, token-y: token-y})
 )
+
+(define-read-only (get-reserves (token-x principal) (token-y principal))
+    (let ((pool (unwrap! (map-get? pools {token-x: token-x, token-y: token-y}) (err ERR-NO-POOL))))
+    (ok {
+        reserve-x: (get reserve-x pool),
+        reserve-y: (get reserve-y pool)
+    }))
+)
