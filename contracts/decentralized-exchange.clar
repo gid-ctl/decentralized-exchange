@@ -236,3 +236,10 @@
         (var-set emergency-shutdown shutdown)
         (ok true))
 )
+
+(define-public (set-governance-token (token (optional principal)))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-NOT-AUTHORIZED))
+        (var-set governance-token token)
+        (ok true))
+)
