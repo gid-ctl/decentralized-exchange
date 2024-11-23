@@ -169,3 +169,42 @@
     
     (ok shares))
 )
+
+(define-public (swap-exact-tokens (token-in <ft-trait>)
+                                 (token-out <ft-trait>)
+                                 (amount-in uint)
+                                 (min-amount-out uint)
+                                 (deadline uint))
+    (let (
+        (pool (unwrap! (map-get? pools {token-x: (contract-of token-in), token-y: (contract-of token-out)}) (err ERR-NO-POOL)))
+        (amount-out (calculate-swap-amount 
+            amount-in
+            (get reserve-x pool)
+            (get reserve-y pool)))
+    )
+    (asserts! (not (var-get emergency-shutdown)) (err ERR-NOT-AUTHORIZED))
+    (asserts! (<= block-height deadline) (err ERR-DEADLINE-PASSED))
+    (asserts! (>= amount-out min-amount-out) (err ERR-SLIPPAGE-TOO-HIGH))
+    
+    ;; Transfer tokens - fixed to include memo
+    (try! (contract-call? token-in transfer amount-in tx-sender (as-contract tx-sender) (some 0x)))
+    (try! (contract-call? token-out transfer amount-out (as-contract tx-sender) tx-sender (some 0x)))
+    
+    ;; Update pool data
+    (map-set pools 
+        {token-x: (contract-of token-in), token-y: (contract-of token-out)}
+        {
+            liquidity: (get liquidity pool),
+            reserve-x: (+ (get reserve-x pool) amount-in),
+            reserve-y: (- (get reserve-y pool) amount-out),
+            total-shares: (get total-shares pool),
+            last-block-height: block-height,
+            cumulative-price-x: (+ (get cumulative-price-x pool) 
+                (/ (* (get reserve-y pool) PRECISION) (get reserve-x pool))),
+            cumulative-price-y: (+ (get cumulative-price-y pool)
+                (/ (* (get reserve-x pool) PRECISION) (get reserve-y pool)))
+        }
+    )
+    
+    (ok amount-out))
+)
