@@ -68,3 +68,13 @@
     )
     (/ numerator denominator))
 )
+
+;; Non-recursive square root approximation
+(define-private (approximate-sqrt (y uint))
+    (let (
+        (n (+ y u1))  ;; Initial guess
+        (n2 (/ y n))  ;; Second approximation
+        (n3 (/ (+ n n2) u2))  ;; Average of approximations
+    )
+    n3)  ;; Return approximation
+)
