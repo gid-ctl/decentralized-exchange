@@ -123,3 +123,49 @@
         (ok true)
     )
 )
+
+(define-public (add-liquidity (token-x <ft-trait>) 
+                             (token-y <ft-trait>)
+                             (amount-x uint)
+                             (amount-y uint)
+                             (min-shares uint)
+                             (deadline uint))
+    (let (
+        (pool (unwrap! (map-get? pools {token-x: (contract-of token-x), token-y: (contract-of token-y)}) (err ERR-NO-POOL)))
+        (shares (calculate-liquidity-shares 
+            amount-x 
+            amount-y 
+            (get total-shares pool)
+            (get reserve-x pool)
+            (get reserve-y pool)))
+    )
+    (asserts! (<= block-height deadline) (err ERR-DEADLINE-PASSED))
+    (asserts! (>= shares min-shares) (err ERR-SLIPPAGE-TOO-HIGH))
+    
+    ;; Transfer tokens to pool - fixed to include memo
+    (try! (contract-call? token-x transfer amount-x tx-sender (as-contract tx-sender) (some 0x)))
+    (try! (contract-call? token-y transfer amount-y tx-sender (as-contract tx-sender) (some 0x)))
+    
+    ;; Update pool data
+    (map-set pools 
+        {token-x: (contract-of token-x), token-y: (contract-of token-y)}
+        {
+            liquidity: (+ (get liquidity pool) u1),
+            reserve-x: (+ (get reserve-x pool) amount-x),
+            reserve-y: (+ (get reserve-y pool) amount-y),
+            total-shares: (+ (get total-shares pool) shares),
+            last-block-height: block-height,
+            cumulative-price-x: (get cumulative-price-x pool),
+            cumulative-price-y: (get cumulative-price-y pool)
+        }
+    )
+    
+    ;; Update provider shares
+    (map-set liquidity-providers
+        {pool-id: {token-x: (contract-of token-x), token-y: (contract-of token-y)}, provider: tx-sender}
+        {shares: (+ (default-to u0 (get shares (map-get? liquidity-providers 
+            {pool-id: {token-x: (contract-of token-x), token-y: (contract-of token-y)}, provider: tx-sender}))) shares)}
+    )
+    
+    (ok shares))
+)
