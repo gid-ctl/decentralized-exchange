@@ -14,6 +14,7 @@
 (define-constant ERR-INVALID-PAIR (err u105))
 (define-constant ERR-ZERO-AMOUNT (err u106))
 (define-constant ERR-DEADLINE-PASSED (err u107))
+(define-constant ERR-TRANSFER-FAILED (err u108))
 
 ;; Constants
 (define-constant CONTRACT-OWNER tx-sender)
@@ -102,11 +103,15 @@
         ))
 )
 
+;; Private function to handle token transfers
+(define-private (transfer-token (token <ft-trait>) (amount uint) (sender principal) (recipient principal))
+    (contract-call? token transfer amount sender recipient (some 0x)))
+
 ;; Public functions
 (define-public (create-pool (token-x principal) (token-y principal))
     (begin
-        (asserts! (is-none (map-get? pools {token-x: token-x, token-y: token-y})) (err ERR-POOL-EXISTS))
-        (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-NOT-AUTHORIZED))
+        (asserts! (is-none (map-get? pools {token-x: token-x, token-y: token-y})) ERR-POOL-EXISTS)
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
         
         (map-set pools 
             {token-x: token-x, token-y: token-y}
@@ -131,7 +136,7 @@
                              (min-shares uint)
                              (deadline uint))
     (let (
-        (pool (unwrap! (map-get? pools {token-x: (contract-of token-x), token-y: (contract-of token-y)}) (err ERR-NO-POOL)))
+        (pool (unwrap! (map-get? pools {token-x: (contract-of token-x), token-y: (contract-of token-y)}) ERR-NO-POOL))
         (shares (calculate-liquidity-shares 
             amount-x 
             amount-y 
@@ -139,12 +144,12 @@
             (get reserve-x pool)
             (get reserve-y pool)))
     )
-    (asserts! (<= block-height deadline) (err ERR-DEADLINE-PASSED))
-    (asserts! (>= shares min-shares) (err ERR-SLIPPAGE-TOO-HIGH))
+    (asserts! (<= block-height deadline) ERR-DEADLINE-PASSED)
+    (asserts! (>= shares min-shares) ERR-SLIPPAGE-TOO-HIGH)
     
-    ;; Transfer tokens to pool - fixed to include memo
-    (try! (contract-call? token-x transfer amount-x tx-sender (as-contract tx-sender) (some 0x)))
-    (try! (contract-call? token-y transfer amount-y tx-sender (as-contract tx-sender) (some 0x)))
+    ;; Transfer tokens to pool
+    (unwrap! (transfer-token token-x amount-x tx-sender (as-contract tx-sender)) ERR-TRANSFER-FAILED)
+    (unwrap! (transfer-token token-y amount-y tx-sender (as-contract tx-sender)) ERR-TRANSFER-FAILED)
     
     ;; Update pool data
     (map-set pools 
@@ -176,19 +181,19 @@
                                  (min-amount-out uint)
                                  (deadline uint))
     (let (
-        (pool (unwrap! (map-get? pools {token-x: (contract-of token-in), token-y: (contract-of token-out)}) (err ERR-NO-POOL)))
+        (pool (unwrap! (map-get? pools {token-x: (contract-of token-in), token-y: (contract-of token-out)}) ERR-NO-POOL))
         (amount-out (calculate-swap-amount 
             amount-in
             (get reserve-x pool)
             (get reserve-y pool)))
     )
-    (asserts! (not (var-get emergency-shutdown)) (err ERR-NOT-AUTHORIZED))
-    (asserts! (<= block-height deadline) (err ERR-DEADLINE-PASSED))
-    (asserts! (>= amount-out min-amount-out) (err ERR-SLIPPAGE-TOO-HIGH))
+    (asserts! (not (var-get emergency-shutdown)) ERR-NOT-AUTHORIZED)
+    (asserts! (<= block-height deadline) ERR-DEADLINE-PASSED)
+    (asserts! (>= amount-out min-amount-out) ERR-SLIPPAGE-TOO-HIGH)
     
-    ;; Transfer tokens - fixed to include memo
-    (try! (contract-call? token-in transfer amount-in tx-sender (as-contract tx-sender) (some 0x)))
-    (try! (contract-call? token-out transfer amount-out (as-contract tx-sender) tx-sender (some 0x)))
+    ;; Transfer tokens
+    (unwrap! (transfer-token token-in amount-in tx-sender (as-contract tx-sender)) ERR-TRANSFER-FAILED)
+    (unwrap! (transfer-token token-out amount-out (as-contract tx-sender) tx-sender) ERR-TRANSFER-FAILED)
     
     ;; Update pool data
     (map-set pools 
@@ -215,7 +220,7 @@
 )
 
 (define-read-only (get-reserves (token-x principal) (token-y principal))
-    (let ((pool (unwrap! (map-get? pools {token-x: token-x, token-y: token-y}) (err ERR-NO-POOL))))
+    (let ((pool (unwrap! (map-get? pools {token-x: token-x, token-y: token-y}) ERR-NO-POOL)))
     (ok {
         reserve-x: (get reserve-x pool),
         reserve-y: (get reserve-y pool)
@@ -232,14 +237,14 @@
 ;; Governance functions
 (define-public (set-emergency-shutdown (shutdown bool))
     (begin
-        (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-NOT-AUTHORIZED))
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
         (var-set emergency-shutdown shutdown)
         (ok true))
 )
 
 (define-public (set-governance-token (token (optional principal)))
     (begin
-        (asserts! (is-eq tx-sender CONTRACT-OWNER) (err ERR-NOT-AUTHORIZED))
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
         (var-set governance-token token)
         (ok true))
 )
