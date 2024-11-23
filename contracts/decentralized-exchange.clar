@@ -45,3 +45,12 @@
     {pool-id: {token-x: principal, token-y: principal}, provider: principal}
     {shares: uint}
 )
+
+(define-map price-oracles
+    principal
+    {
+        price: uint,
+        last-update: uint,
+        valid-period: uint
+    }
+)
