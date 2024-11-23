@@ -208,3 +208,8 @@
     
     (ok amount-out))
 )
+
+;; Read-only functions
+(define-read-only (get-pool-details (token-x principal) (token-y principal))
+    (map-get? pools {token-x: token-x, token-y: token-y})
+)
