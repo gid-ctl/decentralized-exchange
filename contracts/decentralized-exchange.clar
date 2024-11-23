@@ -78,3 +78,12 @@
     )
     n3)  ;; Return approximation
 )
+
+(define-private (calculate-initial-liquidity (amount-x uint) (amount-y uint))
+    (let (
+        (geometric-mean (approximate-sqrt (* amount-x amount-y)))
+    )
+    (if (< geometric-mean MIN-LIQUIDITY)
+        MIN-LIQUIDITY
+        geometric-mean))
+)
