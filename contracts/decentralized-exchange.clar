@@ -54,3 +54,17 @@
         valid-period: uint
     }
 )
+
+;; Helper functions
+(define-private (get-smaller (a uint) (b uint))
+    (if (<= a b) a b))
+
+;; Private functions
+(define-private (calculate-swap-amount (input-amount uint) (input-reserve uint) (output-reserve uint))
+    (let (
+        (input-with-fee (* input-amount (- FEE-DENOMINATOR PROTOCOL-FEE)))
+        (numerator (* input-with-fee output-reserve))
+        (denominator (+ (* input-reserve FEE-DENOMINATOR) input-with-fee))
+    )
+    (/ numerator denominator))
+)
